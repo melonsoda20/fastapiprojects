@@ -23,6 +23,17 @@ class Book(BaseModel):
                             lt=101
                         )
 
+    class Config:
+        schema_extra = {
+            "example": {
+                "id": "c4e89566-c8d8-4806-bb27-bd266e5acf11",
+                "title": "Computer Science Pro",
+                "author": "Codingwithroby",
+                "description": "A very nice description of a book",
+                "rating": 75
+            }
+        }
+
 
 BOOKS = []
 
