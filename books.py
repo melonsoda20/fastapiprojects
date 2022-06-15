@@ -1,4 +1,6 @@
+from typing import Optional
 from fastapi import FastAPI
+
 
 app = FastAPI()
 
@@ -13,11 +15,15 @@ BOOKS = {
 
 # Path declarations with no parameters
 @app.get("/")
-async def read_all_books():
+async def read_all_books(skip_book: Optional[str] = None):
+    if skip_book:
+        new_books = BOOKS.copy()
+        del new_books[skip_book]
+        return new_books
     return BOOKS
 
 
 # Path declarations with parameters
-@app.get("/books/{book_id}")
-async def read_book(book_id: int):
-    return {"book_title": book_id}
+@app.get("/books/{book_name}")
+async def read_book(book_name: str):
+    return BOOKS[book_name]
