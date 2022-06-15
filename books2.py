@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, HTTPException, Request, status, Form, Header
 from pydantic import BaseModel, Field
 from uuid import UUID
 from typing import Optional
@@ -69,6 +69,19 @@ async def negative_number_exception_handler(
     )
 
 
+@app.post("/books/login")
+async def book_login(username: str = Form(...), password: str = Form(...)):
+    return {
+        "username": username,
+        "password": password
+    }
+
+
+@app.get("/header")
+async def read_header(random_header: Optional[str] = Header(None)):
+    return {"Random-Header": random_header}
+
+
 @app.get("/")
 async def read_all_books(books_to_return: Optional[int] = None):
     if books_to_return and books_to_return < 0:
@@ -104,7 +117,7 @@ async def read_book_no_rating(book_id: UUID):
     raise_item_cannot_be_found_exception()
 
 
-@app.post("/")
+@app.post("/", status_code=status.HTTP_201_CREATED)
 async def create_book(book: Book):
     BOOKS.append(book)
     return book
