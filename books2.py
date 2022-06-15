@@ -29,6 +29,8 @@ BOOKS = []
 
 @app.get("/")
 async def read_all_books():
+    if len(BOOKS) < 1:
+        create_books_no_api()
     return BOOKS
 
 
@@ -36,3 +38,42 @@ async def read_all_books():
 async def create_book(book: Book):
     BOOKS.append(book)
     return book
+
+
+def create_books_no_api():
+    book_1 = Book(
+            id="c4e89566-c8d8-4806-bb27-bd266e5acf11",
+            title="Title 1",
+            author="Author 1",
+            description="Description 1",
+            rating=60
+            )
+
+    book_2 = Book(
+            id="4e32af32-b2a7-42ce-8605-95b2d3b1c63d",
+            title="Title 2",
+            author="Author 2",
+            description="Description 2",
+            rating=70
+            )
+
+    book_3 = Book(
+            id="f60268a7-4460-4828-b622-71828503c941",
+            title="Title 3",
+            author="Author 3",
+            description="Description 3",
+            rating=80
+            )
+
+    book_4 = Book(
+            id="67f423a8-9a93-4420-94dd-82e80b799999",
+            title="Title 4",
+            author="Author 4",
+            description="Description 4",
+            rating=90
+            )
+
+    BOOKS.append(book_1)
+    BOOKS.append(book_2)
+    BOOKS.append(book_3)
+    BOOKS.append(book_4)
