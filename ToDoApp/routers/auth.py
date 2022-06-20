@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Depends, HTTPException, status
+from fastapi import Depends, HTTPException, status, APIRouter
 from pydantic import BaseModel
 from typing import Optional, Union
 import models
@@ -8,6 +8,8 @@ from database import SessionLocal, engine
 from fastapi.security import OAuth2PasswordRequestForm, OAuth2PasswordBearer
 from datetime import datetime, timedelta
 from jose import JWTError, jwt
+import sys
+sys.path.append("..")
 
 
 SECRET_KEY = "ndsg353mkgsign"
@@ -29,7 +31,7 @@ models.Base.metadata.create_all(bind=engine)
 oauth2_bearer = OAuth2PasswordBearer(tokenUrl="token")
 
 
-app = FastAPI()
+router = APIRouter()
 
 
 def get_db():
@@ -99,7 +101,7 @@ async def get_current_user(
         raise get_user_exception()
 
 
-@app.post("/create/user")
+@router.post("/create/user")
 async def create_new_user(
     create_user: CreateUser,
     db: Session = Depends(get_db)
@@ -119,7 +121,7 @@ async def create_new_user(
     db.commit()
 
 
-@app.post("/token")
+@router.post("/token")
 async def login_for_access_token(
     form_data: OAuth2PasswordRequestForm = Depends(),
     db: Session = Depends(get_db)
