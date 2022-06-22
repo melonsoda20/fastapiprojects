@@ -1,12 +1,10 @@
 from starlette import status
 from starlette.responses import RedirectResponse
-from typing import Optional
-from fastapi import Depends, HTTPException, APIRouter, Request, Form
+from fastapi import Depends, APIRouter, Request, Form
 import models
 from database import engine, SessionLocal
 from sqlalchemy.orm import Session
-from pydantic import BaseModel, Field
-from .auth import get_current_user, get_user_exception
+from .authfullstack import get_current_user
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 
@@ -41,8 +39,15 @@ async def read_all_by_user(
     request: Request,
     db: Session = Depends(get_db)
 ):
+    user = await get_current_user(request)
+    if user is None:
+        return RedirectResponse(
+            url="/authfullstack",
+            status_code=status.HTTP_302_FOUND
+        )
+
     todos = db.query(models.Todos)\
-        .filter(models.Todos.owner_id == 1)\
+        .filter(models.Todos.owner_id == user.get("id"))\
         .all()
 
     return templates.TemplateResponse(
@@ -56,6 +61,12 @@ async def read_all_by_user(
 
 @router.get("/add-todo", response_class=HTMLResponse)
 async def add_new_todo(request: Request):
+    user = await get_current_user(request)
+    if user is None:
+        return RedirectResponse(
+            url="/authfullstack",
+            status_code=status.HTTP_302_FOUND
+        )
     return templates.TemplateResponse(
         "add-todo.html",
         {
@@ -72,12 +83,18 @@ async def create_todo(
     priority: int = Form(...),
     db: Session = Depends(get_db)
 ):
+    user = await get_current_user(request)
+    if user is None:
+        return RedirectResponse(
+            url="/authfullstack",
+            status_code=status.HTTP_302_FOUND
+        )
     todo_model = models.Todos()
     todo_model.title = title
     todo_model.description = description
     todo_model.priority = priority
     todo_model.complete = False
-    todo_model.owner_id = 1
+    todo_model.owner_id = user.get("id")
 
     db.add(todo_model)
     db.commit()
@@ -94,6 +111,12 @@ async def edit_todo(
     todo_id: int,
     db: Session = Depends(get_db)
 ):
+    user = await get_current_user(request)
+    if user is None:
+        return RedirectResponse(
+            url="/authfullstack",
+            status_code=status.HTTP_302_FOUND
+        )
     todo = db.query(models.Todos)\
         .filter(models.Todos.id == todo_id)\
         .first()
@@ -116,6 +139,12 @@ async def edit_todo_commit(
     priority: int = Form(...),
     db: Session = Depends(get_db)
 ):
+    user = await get_current_user(request)
+    if user is None:
+        return RedirectResponse(
+            url="/authfullstack",
+            status_code=status.HTTP_302_FOUND
+        )
     todo_model = db.query(models.Todos)\
         .filter(models.Todos.id == todo_id)\
         .first()
@@ -139,9 +168,15 @@ async def delete_todo(
     todo_id: int,
     db: Session = Depends(get_db)
 ):
+    user = await get_current_user(request)
+    if user is None:
+        return RedirectResponse(
+            url="/authfullstack",
+            status_code=status.HTTP_302_FOUND
+        )
     todo_model = db.query(models.Todos)\
         .filter(models.Todos.id == todo_id)\
-        .filter(models.Todos.owner_id == 1)\
+        .filter(models.Todos.owner_id == user.get("id"))\
         .first()
 
     if todo_model is None:
@@ -168,6 +203,12 @@ async def complete_todo(
     todo_id: int,
     db: Session = Depends(get_db)
 ):
+    user = await get_current_user(request)
+    if user is None:
+        return RedirectResponse(
+            url="/authfullstack",
+            status_code=status.HTTP_302_FOUND
+        )
     todo = db.query(models.Todos)\
         .filter(models.Todos.id == todo_id)\
         .first()

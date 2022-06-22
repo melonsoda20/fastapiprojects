@@ -1,4 +1,6 @@
-from fastapi import Depends, HTTPException, status, APIRouter, Request
+from starlette.responses import RedirectResponse
+from fastapi import Depends, HTTPException, status,\
+     APIRouter, Request, Response
 from pydantic import BaseModel
 from typing import Optional, Union
 import models
@@ -45,6 +47,18 @@ router = APIRouter(
         }
     }
 )
+
+
+class LoginForm:
+    def __init__(self, request: Request) -> None:
+        self.request: Request = request
+        self.username: Optional[str] = None
+        self.password: Optional[str] = None
+
+    async def create_oauth_form(self):
+        form = await self.request.form()
+        self.username = form.get("email")
+        self.password = form.get("password")
 
 
 def get_db():
@@ -94,9 +108,12 @@ def create_access_token(
 
 
 async def get_current_user(
-    token: str = Depends(oauth2_bearer)
+    request: Request
 ):
     try:
+        token = request.cookies.get("access_token")
+        if token is None:
+            return None
         payload = jwt.decode(
             token,
             SECRET_KEY,
@@ -105,7 +122,7 @@ async def get_current_user(
         username: str = payload.get("sub")
         user_id: int = payload.get("id")
         if username is None or user_id is None:
-            raise get_user_exception()
+            return None
         return {
             "username": username,
             "id": user_id
@@ -137,20 +154,27 @@ async def create_new_user(
 
 @router.post("/token")
 async def login_for_access_token(
+    response: Response,
     form_data: OAuth2PasswordRequestForm = Depends(),
     db: Session = Depends(get_db)
 ):
     user = authenticate_user(form_data.username, form_data.password, db)
     if not user:
-        raise token_exception()
-    token_expires = timedelta(minutes=20)
+        return False
+    token_expires = timedelta(minutes=60)
     token = create_access_token(
         user.username,
         user.id,
         expires_delta=token_expires
     )
 
-    return {"token": token}
+    response.set_cookie(
+        key="access_token",
+        value=token,
+        httponly=True
+    )
+
+    return True
 
 
 @router.get("/", response_class=HTMLResponse)
@@ -161,6 +185,46 @@ async def authentication_page(request: Request):
             "request": request
         }
     )
+
+
+@router.post("/", response_class=HTMLResponse)
+async def login(
+    request: Request,
+    db: Session = Depends(get_db)
+):
+    try:
+        form = LoginForm(request)
+        await form.create_oauth_form()
+        response = RedirectResponse(
+            url="/todosfullstack",
+            status_code=status.HTTP_302_FOUND
+        )
+
+        validate_user_cookie = await login_for_access_token(
+            response=response,
+            form_data=form,
+            db=db
+        )
+
+        if not validate_user_cookie:
+            msg = "Incorrect username or password"
+            return templates.TemplateResponse(
+                "login.html",
+                {
+                    "request": request,
+                    "msg": msg
+                }
+            )
+        return response
+    except HTTPException:
+        msg = "Unknown Error"
+        return templates.TemplateResponse(
+            "login.html",
+            {
+                "request": request,
+                "msg": msg
+            }
+        )
 
 
 @router.get("/register", response_class=HTMLResponse)
