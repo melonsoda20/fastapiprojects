@@ -227,6 +227,24 @@ async def login(
         )
 
 
+@router.get("/logout")
+async def logout(request: Request):
+    msg = "Logout Successful"
+    response = templates.TemplateResponse(
+        "login.html",
+        {
+            "request": request,
+            "msg": msg
+        }
+    )
+
+    response.delete_cookie(
+        key="access_token"
+    )
+
+    return response
+
+
 @router.get("/register", response_class=HTMLResponse)
 async def register(request: Request):
     return templates.TemplateResponse(

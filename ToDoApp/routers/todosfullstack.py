@@ -54,7 +54,8 @@ async def read_all_by_user(
         "home.html",
         {
             "request": request,
-            "todos": todos
+            "todos": todos,
+            "user": user
         }
     )
 
@@ -70,7 +71,8 @@ async def add_new_todo(request: Request):
     return templates.TemplateResponse(
         "add-todo.html",
         {
-            "request": request
+            "request": request,
+            "user": user
         }
     )
 
@@ -125,7 +127,8 @@ async def edit_todo(
         "edit-todo.html",
         {
             "request": request,
-            "todo": todo
+            "todo": todo,
+            "user": user
         }
     )
 
